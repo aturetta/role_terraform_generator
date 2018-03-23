@@ -14,10 +14,14 @@
     src: "importstate.j2"
     dest: "{{workdir}}02-importstate.tf"
 
+- name: local variables
+  template:
+    src: "locals.j2"
+    dest: "{{workdir}}03-locals.tf"
+
 - name: define security groups
   template:
-    src: aws_security_group.j2
+    src: aws_security_groups.j2
     dest: "{{workdir}}10-security_groups.tf"
   when:
     security_groups is defined
-    

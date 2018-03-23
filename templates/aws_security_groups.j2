@@ -1,3 +1,4 @@
+{% set base=env ~ "-" ~ project ~ ( "-" ~ app if app is defined else "" ) %}
 {% for sg in (security_groups|default([])) %}
 ##
 ## security group
