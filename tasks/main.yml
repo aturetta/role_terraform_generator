@@ -32,3 +32,10 @@
     dest: "{{workdir}}11-iam_resources.tf"
   when:
     iam_roles is defined or instance_profiles is defined
+
+- name: policy files
+  template:
+    src: "{{item}}"
+    dest: "{{workdir}}{{item}}"
+  with_items:
+  - ec2_assume_role_policy.json
