@@ -13,3 +13,11 @@
   template:
     src: "importstate.j2"
     dest: "{{workdir}}02-importstate.tf"
+
+- name: define security groups
+  template:
+    src: aws_security_group.j2
+    dest: "{{workdir}}10-security_groups.tf"
+  when:
+    security_groups is defined
+    
