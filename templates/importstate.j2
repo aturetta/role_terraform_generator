@@ -1,0 +1,18 @@
+{% for rmt in import_state|default([])|list %}
+##
+## Terraform State File
+##
+data "terraform_remote_state" "{{rmt.name|default(rmt.key)}}" {
+    backend = "s3"
+    config {
+        encrypt = "true"
+        bucket = "tf-{{rmt.region|default(region)}}-{{rmt.account_id|default(aws_account_id)}}"
+        key    = "{{rmt.key}}/terraform.tfstate"
+        region = "{{rmt.region|default(region)}}"
+{% if profile is defined or rmt.profile is defined %}
+        profile = "{{rmt.profile|default(profile)}}"
+        shared_credentials_file = "credentials"
+{% endif %}
+    }
+}
+{% endfor %}

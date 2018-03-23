@@ -1,0 +1,15 @@
+- name: provider templates
+  template:
+    src: "{{item}}-provider.j2"
+    dest: "{{workdir}}00-provider-{{item}}.tf"
+  with_items: "{{terraform_providers|default(['aws'])}}"
+
+- name: remote states
+  template:
+    src: "remotestate.j2"
+    dest: "{{workdir}}01-remotestate.tf"
+
+- name: import state from other terraform projects
+  template:
+    src: "importstate.j2"
+    dest: "{{workdir}}02-importstate.tf"

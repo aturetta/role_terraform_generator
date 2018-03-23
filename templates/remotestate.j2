@@ -1,0 +1,12 @@
+terraform {
+    backend "s3" {
+      encrypt = "true"
+      bucket = "tf-{{region}}-{{aws_account_id}}"
+      key = "{{env}}-{{project}}{% if app is defined %}-{{app}}{%endif%}/terraform.tfstate"
+      region = "{{region}}"
+{% if profile is defined %}
+      profile = "{{profile}}"
+      shared_credentials_file = "credentials"
+{% endif %}
+    }
+}
