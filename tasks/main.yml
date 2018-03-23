@@ -25,3 +25,10 @@
     dest: "{{workdir}}10-security_groups.tf"
   when:
     security_groups is defined
+
+- name: IAM resources
+  template:
+    src: aws_roles.j2
+    dest: "{{workdir}}11-iam_resources.tf"
+  when:
+    iam_roles is defined or instance_profiles is defined
