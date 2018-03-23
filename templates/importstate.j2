@@ -15,4 +15,9 @@ data "terraform_remote_state" "{{rmt.name|default(rmt.key)}}" {
 {% endif %}
     }
 }
+{% if rmt.vpc is defined %}
+locals {
+	vpc = "${data.terraform_remote_state.{{rmt.name|default(rmt.key)}}.{{rmt.vpc|default('vpc-id')}}}"
+}
+{% endif %}
 {% endfor %}
