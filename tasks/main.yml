@@ -21,11 +21,6 @@
   vars:
     allsubnets: "{{(_mynic|default([]) + common.nic|default([]))|map(attribute='subnet')|unique()|list}}"
 
-- name: test parsers
-  debug: msg="{{_mynic|default([]) + (common.nic|default([]))}}"
-- name: test parsers
-  debug: msg="{{(myint|default([]) + common.nic|default([]))|map(attribute='subnet')|unique()}}"
-
 - name: local variables
   template:
     src: "locals.j2"
