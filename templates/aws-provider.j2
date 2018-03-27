@@ -3,6 +3,10 @@
 ##
 provider "aws" {
     region = "{{region}}"
+{% if profile is defined %}
+    profile = "{{profile}}"
+    shared_credentials_file = "credentials"
+{% endif %}
 }
 
 data "aws_caller_identity" "current" {}

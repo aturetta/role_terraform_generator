@@ -50,5 +50,5 @@
 - name: instances
   template:
     src: aws_instance.j2
-    dest: "{{workdir}}{{item.name}}.tf"
+    dest: "{{workdir}}20-server-{{item.name}}.tf"
   with_items: "[{{vms|default([])|list()}}]"

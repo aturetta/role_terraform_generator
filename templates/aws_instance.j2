@@ -10,7 +10,7 @@
 
 resource "aws_network_interface" "{{ec2.name}}-nic{{loop.index0}}" {
     description = "{{ec2.name}}-{{nic.name|default(nic.device|default('nic'~loop.index0))}} network interface"
-    subnet_id = "${element(split(",",$local.{{nic.subnet}}),index(list("a","b","c","d","e"),"{{ec2.az}}"))}"
+    subnet_id = "${element(split(",",local.{{nic.subnet}}),index(list("a","b","c","d","e"),"{{ec2.az}}"))}"
 {% if nic.private_ip is defined %}
 {% set ipcomma = joiner(',') %}
 {% set ipcount = [0] %}
@@ -19,7 +19,7 @@ resource "aws_network_interface" "{{ec2.name}}-nic{{loop.index0}}" {
 {% endif %}
 {% if nic.sg is defined %}
 {% set sgcomma = joiner(',') %}
-    security_groups = [ {% for sg in (nic.sg if (nic.sg is not string) else [nic.sg]) %} {{sgcomma()}}{%if 'terraform' in sg%}"{{sg}}"{%else%}"${aws_security_group.sg-{{base}}-{{sg}}.id}"{%endif%} {% endfor %} ]
+    security_groups = [ {% for sg in (nic.sg if (nic.sg is not string) else [nic.sg]) %} {{sgcomma()}}{%if 'terraform' in sg or sg.startswith('sg-') %}"{{sg}}"{%else%}"${aws_security_group.sg-{{base}}-{{sg}}.id}"{%endif%} {% endfor %} ]
 {% endif %}
     tags {
         Name = "{{ec2.name}}-{{nic.name|default(nic.device|default('nic'~loop.index0))}}"
@@ -75,7 +75,7 @@ resource "aws_instance" "{{ec2.name}}" {
       network_interface_id = "${aws_network_interface.{{ec2.name}}-nic0.id}"
       device_index = 0
     }
-    depends_on ["aws_network_interface.{{ec2.name}}-nic0"]
+    depends_on = ["aws_network_interface.{{ec2.name}}-nic0"]
 
 {% set devices = ['f','g','h','i','j','k','l','m','n'] %}
 {% for dsk in (ec2.disk|default(common.disk)) %}
@@ -107,8 +107,8 @@ resource "aws_instance" "{{ec2.name}}" {
         {{k}} = "{{v}}"
 {% endfor %}
 {% endif %}
-{% if commontags is defined %}
-{% for k, v in commontags.iteritems() %}
+{% if common.tags is defined %}
+{% for k, v in common.tags.iteritems() %}
         {{k}} = "{{v}}"
 {% endfor %}
 {% endif %}
@@ -171,7 +171,7 @@ resource "null_resource" "dns-{{ec2.name}}" {
 {% for nic in ec2.nic|default(common.nic) %}
 {% if loop.index0 > 0 %}
 resource aws_network_interface_attachment "{{ec2.name}}-nic{{loop.index0}}" {
-    depends_on ["aws_instance.{{ec2.name}}","aws_network_interface.{{ec2.name}}-nic{{loop.index0}}"]
+    depends_on = ["aws_instance.{{ec2.name}}","aws_network_interface.{{ec2.name}}-nic{{loop.index0}}"]
     network_interface_id = "${aws_network_interface.{{ec2.name}}-nic{{loop.index0}}.id}"
     instance_id = "${aws_instance.{{ec2.name}}.id}"
     device_index = {{loop.index0}}
