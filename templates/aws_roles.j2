@@ -13,9 +13,9 @@ resource "aws_iam_policy_attachment" "attach-{{rol.name|default(base)}}-{{pol}}"
   roles      = ["${aws_iam_role.rl-{{rol.name|default(base)}}.name}"]
   policy_arn = "${aws_iam_policy.{{pol}}.arn}"
 }
-{% endfor #policies %}
+{% endfor %} {# policies #}
 
-{% endfor #roles %}
+{% endfor %} {# roles #}
 
 {% for prf in (instance_profiles|default([])) %}
 ##
