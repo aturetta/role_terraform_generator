@@ -14,8 +14,11 @@ resource "aws_security_group" "sg-{{base}}-{{sg.name}}" {
         from_port = {{rule.from_port}}
         to_port = {{rule.to_port}}
         protocol = {{rule.proto}}
-{% set destcomma = joiner(',') %}
+        {% set destcomma = joiner(',') %}
         cidr_blocks = [{% for cidr in (rule.dest if (rule.dest is not string) else [rule.dest]) %} {{destcomma()}}"{{cidr}}" {% endfor %}]
+        {% if rule.descr is defined %}
+            description = "{{rule.descr|default('')}}"
+        {% endif %}
     }
 {% endfor %}
 {% if sg.descr is defined %}
@@ -43,8 +46,10 @@ resource "aws_security_group" "sg-{{base}}-{{sg.name}}" {
         security_groups = ["{{rule.source}}"]
 {% else %}
 {% set cidrcomma = joiner(',') %}
-        cidr_blocks = [ {% for cidr in (rule.source if (rule.source is not string) else [rule.source]) %} {{cidrcomma()}}"{{cidr}}" {% endfor %}
-]
+        cidr_blocks = [ {% for cidr in (rule.source if (rule.source is not string) else [rule.source]) %} {{cidrcomma()}}"{{cidr}}" {% endfor %} ]
+        {% if rule.descr is defined %}
+            description = "{{rule.descr|default('')}}"
+        {% endif %}
 {% endif %}
 {% endif %}
 {% if (rule.self|default(False)) or not (rule.source is defined and rule.source|length > 0) %}
