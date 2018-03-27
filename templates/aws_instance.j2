@@ -1,15 +1,16 @@
 {% set base=env ~ "-" ~ project ~ ( "-" ~ app if app is defined else "" ) %}
+{% set ec2=item %}
 
 
-##vpc_security_group_ids = [ "${data.terraform_remote_state.{{vpc}}.{{default_sg|default('sg-core-default')}}}"{% if nic0.sg is defined %},"${aws_security_group.sg-{{base}}-{{nic0.sg}}.id}"{% endif %} ]
-##subnet_id = "${element(split(",",data.terraform_remote_state.{{vpc}}.{{nic0.subnet}}),index(list("a","b","c","d","e"),"{{ec2.az|default(az)}}"))}"
+{#vpc_security_group_ids = [ "${data.terraform_remote_state.{{vpc}}.{{default_sg|default('sg-core-default')}}}"{% if nic0.sg is defined %},"${aws_security_group.sg-{{base}}-{{nic0.sg}}.id}"{% endif %} ]
+##subnet_id = "${element(split(",",data.terraform_remote_state.{{vpc}}.{{nic0.subnet}}),index(list("a","b","c","d","e"),"{{ec2.az|default(az)}}"))}"#}
 
 {% for nic in ec2.nic|default(common.nic) %}
 {% set outer_loop = loop %}
 
 resource "aws_network_interface" "{{ec2.name}}-nic{{loop.index0}}" {
     description = "{{ec2.name}}-{{nic.name|default(nic.device|default('nic'~loop.index0))}} network interface"
-    subnet_id = "${element(split(",",data.terraform_remote_state.{{vpc}}.{{nic.subnet}}),index(list("a","b","c","d","e"),"{{ec2.az}}"))}"
+    subnet_id = "${element(split(",",$local.{{nic.subnet}}),index(list("a","b","c","d","e"),"{{ec2.az}}"))}"
 {% if nic.private_ip is defined %}
 {% set ipcomma = joiner(',') %}
 {% set ipcount = [0] %}
@@ -30,7 +31,7 @@ resource "aws_network_interface" "{{ec2.name}}-nic{{loop.index0}}" {
     source_dest_check = false
 {% endif %}
 }
-{% endif %}
+
 {% if nic.private_ip is defined %}
 {% for ip in (nic.private_ip if (nic.private_ip is not string) else [nic.private_ip]) %}
 {% if ip is not string and ip.pub is defined %}
@@ -51,9 +52,10 @@ resource "aws_eip_association" "eip_assoc_{{ec2.name}}_{{eip_name}}" {
   private_ip_address = "{{ip.priv}}"
 }
 {% endif %}
-
 {% endif %}
+
 {% endfor %} {# IP #}
+{% endif %}
 
 {% endfor %} {# NIC #}
 
@@ -176,6 +178,3 @@ resource aws_network_interface_attachment "{{ec2.name}}-nic{{loop.index0}}" {
 }
 {% endif %}
 {% endfor %} {# NIC #}
-
-
-{% endfor %} {# INSTANCE #}

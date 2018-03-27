@@ -18,6 +18,9 @@ data "terraform_remote_state" "{{rmt.name|default(rmt.key)}}" {
 {% if rmt.vpc is defined %}
 locals {
 	vpc = "${data.terraform_remote_state.{{rmt.name|default(rmt.key)}}.{{rmt.vpc|default('vpc-id')}}}"
+{% for net in allsubnets|default([])%}
+  {{net}} = "${data.terraform_remote_state.{{rmt.name|default(rmt.key)}}.{{net}}}"
+{% endfor %}
 }
 {% endif %}
 {% endfor %}
