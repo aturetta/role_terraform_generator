@@ -47,8 +47,20 @@
   with_items:
   - ec2_assume_role_policy.json
 
+#- name: get datafile definition
+#  debug: msg="{{(datafiles|selectattr("name", "match", "^apic-user-data$")|map(attribute="singleton")|first)}}"
+
+- name: singleton templates
+  template:
+    src: "template.j2"
+    dest: "{{workdir}}12-template-{{item.name}}.tf"
+  with_items: "{{datafiles|selectattr('singleton')|list}}"
+  when: (datafiles|default([])|selectattr('singleton')|list|length) > 0
+
 - name: instances
   template:
     src: aws_instance.j2
     dest: "{{workdir}}20-server-{{item.name}}.tf"
+  vars:
+    templates: "{{datafiles|rejectattr('singleton')|list}}"
   with_items: "[{{vms|default([])|list()}}]"

@@ -22,5 +22,12 @@ locals {
   {{net}} = "${data.terraform_remote_state.{{rmt.name|default(rmt.key)}}.{{net}}}"
 {% endfor %}
 }
+{% for net in allsubnets|default([])%}
+data "aws_subnet" "{{net}}" {
+  count = "${length(split(",", local.{{net}}))}"
+  id = "${element(split(",", local.{{net}}), count.index)}"
+}
+{% endfor %}
+
 {% endif %}
 {% endfor %}

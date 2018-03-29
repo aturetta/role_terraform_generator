@@ -1,9 +1,24 @@
-{% set base=env ~ "-" ~ project ~ ( "-" ~ app if app is defined else "" ) %}
 {% set ec2=item %}
-
+{% set charcode = {'a': 0,'b': 1,'c': 2,'d': 3,'e': 4,'f': 5,'g': 6,'h': 7} %}
 
 {#vpc_security_group_ids = [ "${data.terraform_remote_state.{{vpc}}.{{default_sg|default('sg-core-default')}}}"{% if nic0.sg is defined %},"${aws_security_group.sg-{{base}}-{{nic0.sg}}.id}"{% endif %} ]
 ##subnet_id = "${element(split(",",data.terraform_remote_state.{{vpc}}.{{nic0.subnet}}),index(list("a","b","c","d","e"),"{{ec2.az|default(az)}}"))}"#}
+
+{% for t in templates %}
+data "template_file" "{{t.name}}-{{ec2.name}}" {
+  template = <<EOF
+{% include './templates/'~t.source %}
+EOF
+  vars {
+    vpc = "${local.vpc}"
+{% for nic in ec2.nic|default(common.nic) %}
+    dev{{loop.index}} = "{{nic.device|default('eth'~loop.index0)}}"
+    cidr{{loop.index}} = "${data.aws_subnet.{{nic.subnet}}.{{charcode[ec2.az|default('a')]}}.cidr_block}"
+{% endfor %}
+  }
+}
+{% endfor %}
+
 
 {% for nic in ec2.nic|default(common.nic) %}
 {% set outer_loop = loop %}
@@ -19,7 +34,7 @@ resource "aws_network_interface" "{{ec2.name}}-nic{{loop.index0}}" {
 {% endif %}
 {% if nic.sg is defined %}
 {% set sgcomma = joiner(',') %}
-    security_groups = [ {% for sg in (nic.sg if (nic.sg is not string) else [nic.sg]) %} {{sgcomma()}}{%if 'terraform' in sg or sg.startswith('sg-') %}"{{sg}}"{%else%}"${aws_security_group.sg-{{base}}-{{sg}}.id}"{%endif%} {% endfor %} ]
+    security_groups = [ {% for sg in (nic.sg if (nic.sg is not string) else [nic.sg]) %} {{sgcomma()}}{%if 'terraform' in sg or sg.startswith('sg-')%}"{{sg}}"{%else%}"${aws_security_group.sg-{{base}}-{{sg}}.id}"{%endif%} {% endfor %} ]
 {% endif %}
     tags {
         Name = "{{ec2.name}}-{{nic.name|default(nic.device|default('nic'~loop.index0))}}"
@@ -94,8 +109,19 @@ resource "aws_instance" "{{ec2.name}}" {
     }
 {% endif %}
 {% endfor %}
-{% if ec2.userdata is defined or common.userdata is defined %}
-    user_data = "${data.template_file.{{ec2.userdata|default(common.userdata)}}.rendered}"
+{% set _metadata = ec2.userdata|default(common.userdata)|default(none)%}
+{% if _metadata %}
+{% set _datafile = (datafiles|selectattr("name", "match", '^'~ _metadata ~'$')|first|default(false)) %}
+{% if _datafile %}
+{% if _datafile.singleton|default(false) %}
+    user_data = "${data.template_file.{{_metadata}}.rendered}"
+{% endif %} {# singleton #}
+{% if not _datafile.singleton|default(false) %}
+    user_data = "${data.template_file.{{_metadata}}-{{ec2.name}}.rendered}"
+{% endif %} {# not singleton #}
+{% else %} {# datafile #}
+    ## user_data {{_metadata}} not found
+{% endif %} {# not datafile #}
 {% endif %}
     tags {
         Name = "{{ec2.name|default(base + '-${count.index + 1}')}}"
@@ -112,6 +138,9 @@ resource "aws_instance" "{{ec2.name}}" {
         {{k}} = "{{v}}"
 {% endfor %}
 {% endif %}
+    }
+    lifecycle {
+      ignore_changes = ["user_data"]
     }
 }
 
