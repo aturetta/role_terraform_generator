@@ -8,6 +8,7 @@
 data "template_file" "{{t.name}}-{{ec2.name}}" {
   template = <<EOF
 {% include './templates/'~t.source %}
+
 EOF
   vars {
     vpc = "${local.vpc}"
