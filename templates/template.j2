@@ -1,1 +1,11 @@
 {# placeholder for template management #}
+
+data "template_file" "{{item.name}}" {
+  template = <<EOF
+{% include item.source %}
+
+EOF
+  vars {
+    vpc = "${local.vpc}"
+  }
+}

@@ -7,10 +7,11 @@
 {% for t in templates %}
 data "template_file" "{{t.name}}-{{ec2.name}}" {
   template = <<EOF
-{% include './templates/'~t.source %}
+{% include t.source %}
 
 EOF
   vars {
+    hostname = "{{ec2.name}}"
     vpc = "${local.vpc}"
 {% for nic in ec2.nic|default(common.nic) %}
     dev{{loop.index}} = "{{nic.device|default('eth'~loop.index0)}}"
