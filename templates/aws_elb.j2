@@ -1,0 +1,80 @@
+{% for elb in (load_balancers|default([])) %}
+{% if elb.name is defined %}
+{% set lbname = 'lb-'+base+'-'+elb.name %}
+{% else %}
+{% set lbname = 'lb-'+base %}
+{% endif %}
+resource "aws_elb" "{{lbname}}" {
+    name = "{{lbname}}"
+{% if elb.internal is defined and elb.internal %}
+    internal = true
+{% else %}
+    internal = false
+{% endif %}
+{% if elb.sg is defined %}
+{% set elbsgcomma = joiner(',') %}
+    security_groups = [ {% for sg in (elb.sg if (elb.sg is not string) else [elb.sg]) %} {{elbsgcomma()}}{%if 'terraform' in sg%}"{{sg}}"{%else%}"${aws_security_group.sg-{{base}}-{{sg}}.id}"{%endif%} {% endfor %} ]
+{% endif %}
+{% set elbsncomma = joiner(',') %}
+    subnets = [
+{% for zone in elb.zones %}
+{{elbsncomma()}}"${element(split(",",local.{{elb.subnet}}),index(list("a","b","c","d","e"),"{{zone}}"))}"
+{% endfor %}
+]
+
+{% for lstn in elb.listeners %}
+    listener {
+        instance_port = "{{lstn.instance_port|default(lstn.port)}}"
+        instance_protocol = "{{lstn.instance_proto|default(lstn.proto|default('tcp'))}}"
+        lb_port = "{{lstn.port}}"
+        lb_protocol = "{{lstn.proto|default('tcp')}}"
+    }
+{% endfor %}
+    health_check {
+        healthy_threshold = 2
+        unhealthy_threshold = 2
+        timeout = 5
+        target = "{{elb.health_check|default('TCP:80')}}"
+        interval = 30
+    }
+
+    cross_zone_load_balancing = true
+    idle_timeout = 3600
+    connection_draining = true
+    connection_draining_timeout = 5
+    tags {
+        Name = "{{lbname}}"
+        Environment = "{{env}}"
+        Project = "{{project}}"
+        Application = "{{app}}"
+    }
+
+{% if vms is defined or elb.sg is defined %}
+    depends_on = [
+{% set elbdepcomma = joiner(',') %}
+{% for ec2 in (vms|default([])) %}
+{{elbdepcomma()}}"aws_instance.{{ec2.name}}"
+{% endfor %}
+{% if elb.sg is defined %}
+{% for sg in (elb.sg if (elb.sg is not string) else [elb.sg]) %}
+{% if 'terraform' not in sg  %}{{elbdepcomma()}}"aws_security_group.sg-{{base}}-{{sg}}"{%endif%}
+{% endfor %}
+{% endif %}
+]
+{% endif %}
+
+{% if vms is defined %}
+{% set instcomma = joiner(',') %}
+   instances = [
+{% for ec2 in vms %}
+{{instcomma()}}"${aws_instance.{{ec2.name}}.id}"
+{% endfor %}
+{% endif %}
+]
+}
+{% if (elb.exported is defined and elb.exported) %}
+output "{{lbname}}" {
+  value = "${aws_elb.{{lbname}}.dns_name}"
+}
+{% endif %}
+{% endfor %}
