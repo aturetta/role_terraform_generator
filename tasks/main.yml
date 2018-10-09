@@ -65,7 +65,12 @@
     templates: "{{datafiles|rejectattr('singleton')|list}}"
   with_items: "[{{vms|default([])|list()}}]"
 
-- name: load balancers
+- name: classic load balancers
   template:
     src: aws_elb.j2
     dest: "{{workdir}}30-balancers.tf"
+
+- name: load balancers
+  template:
+    src: aws_lb.j2
+    dest: "{{workdir}}31-balancers.tf"
