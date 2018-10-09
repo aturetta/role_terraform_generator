@@ -19,7 +19,7 @@
     src: "importstate.j2"
     dest: "{{workdir}}02-importstate.tf"
   vars:
-    allsubnets: "{{(_mynic|default([]) + common.nic|default([]))|map(attribute='subnet')|unique()|list}}"
+    allsubnets: "{{(_mynic|default([]) + common.nic|default([]) + load_balancers|default([]))|map(attribute='subnet')|unique()|list}}"
 
 - name: local variables
   template:
