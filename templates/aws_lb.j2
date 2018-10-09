@@ -28,8 +28,6 @@ resource "aws_lb" "{{lbname}}" {
 
 
     enable_cross_zone_load_balancing = true
-    connection_draining = true
-    connection_draining_timeout = 5
     tags {
         Name = "{{lbname}}"
         Environment = "{{env}}"
@@ -55,19 +53,11 @@ resource "aws_lb" "{{lbname}}" {
 
 
 
-{% if vms is defined %}
-{% set instcomma = joiner(',') %}
-   instances = [
-{% for ec2 in vms %}
-{{instcomma()}}"${aws_instance.{{ec2.name}}.id}"
-{% endfor %}
-]
-{% endif %}
 
 
 {% for lstn in elb.listeners %}
-resource "aws_lb_target_group" "{{lbname~'_'~lstn.port}}" {
-    name     = "{{lbname~'_'~lstn.port}}"
+resource "aws_lb_target_group" "{{lbname~'-'~lstn.port}}" {
+    name     = "{{lbname~'-'~lstn.port}}"
     port     = {{lstn.port}}
     protocol = "{{lstn.proto|default('TCP')}}"
     vpc_id   = "${local.vpc}"
@@ -81,26 +71,24 @@ resource "aws_lb_target_group" "{{lbname~'_'~lstn.port}}" {
     #}
 }
 
-{% for ec2 in vms %}
-resource "aws_lb_target_group_attachment" "{{lbname~'_'~lstn.port}}" {
-  target_group_arn = "${aws_lb_target_group.{{lbname~'_'~lstn.port}}.arn}"
+{% for ec2 in vms|default([]) %}
+resource "aws_lb_target_group_attachment" "{{lbname~'-'~ec2.name~'-'~lstn.port}}" {
+  target_group_arn = "${aws_lb_target_group.{{lbname~'-'~lstn.port}}.arn}"
   target_id        = "${aws_instance.{{ec2.name}}.id}"
   port             = {{lstn.port}}
 }
 {% endfor %}
 
 resource "aws_lb_listener" "{{lbname~'_'~lstn.port}}" {
-  load_balancer_arn = "${aws_lb.{{lbname~'_'~lstn.port}}.arn}"
+  load_balancer_arn = "${aws_lb.{{lbname}}.arn}"
   port              = "{{lstn.port}}"
   protocol          = "{{lstn.proto|default('TCP')}}"
 
   default_action {
     type             = "forward"
-    target_group_arn = "${aws_lb_target_group.{{lbname~'_'~lstn.port}}.arn}"
+    target_group_arn = "${aws_lb_target_group.{{lbname~'-'~lstn.port}}.arn}"
   }
 }
-
-
 {% endfor %}
 
 
