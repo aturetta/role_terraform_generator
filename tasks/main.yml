@@ -62,7 +62,7 @@
     src: aws_instance.j2
     dest: "{{workdir}}20-server-{{item.name}}.tf"
   vars:
-    templates: "{{datafiles|rejectattr('singleton')|list}}"
+    templates: "{{datafiles|default([])|rejectattr('singleton')|list}}"
   with_items: "[{{vms|default([])|list()}}]"
 
 - name: classic load balancers
