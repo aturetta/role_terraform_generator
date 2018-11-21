@@ -86,7 +86,7 @@ resource "aws_instance" "{{ec2.name}}" {
     ami = "{{ec2.ami|default(common.ami)}}"
     instance_type = "{{ec2.instance_type|default(common.instance_type)}}"
     key_name = "{{ec2.key_name|default(common.key_name)}}"
-    iam_instance_profile   = "${aws_iam_instance_profile.ip-{{base}}.name}"
+    {% if instance_profiles is defined %}iam_instance_profile   = "${aws_iam_instance_profile.ip-{{base}}.name}"{% endif %}
     disable_api_termination = true
 
     network_interface {
