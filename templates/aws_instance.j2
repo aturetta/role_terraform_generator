@@ -13,6 +13,7 @@ EOF
   vars {
     hostname = "{{ec2.name}}"
     vpc = "${local.vpc}"
+
 {% for nic in ec2.nic|default(common.nic) %}
     dev{{loop.index}} = "{{nic.device|default('eth'~loop.index0)}}"
     cidr{{loop.index}} = "${data.aws_subnet.{{nic.subnet}}.{{charcode[ec2.az|default('a')]}}.cidr_block}"
@@ -112,8 +113,8 @@ resource "aws_instance" "{{ec2.name}}" {
 {% endif %}
 {% endfor %}
 {% set _metadata = ec2.userdata|default(common.userdata)|default(none)%}
-{% if _metadata %}
-{% set _datafile = (datafiles|selectattr("name", "match", '^'~ _metadata ~'$')|first|default(false)) %}
+{% if _metadata is defined and _metadata != 'none' %}
+{% set _datafile = (datafiles|default([])|selectattr("name", "match", '^'~ _metadata ~'$')|first|default(false)) %}
 {% if _datafile %}
 {% if _datafile.singleton|default(false) %}
     user_data = "${data.template_file.{{_metadata}}.rendered}"
