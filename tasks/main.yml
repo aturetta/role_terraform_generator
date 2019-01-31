@@ -57,6 +57,14 @@
   with_items: "{{datafiles|selectattr('singleton')|list}}"
   when: (datafiles|default([])|selectattr('singleton')|list|length) > 0
 
+- debug: msg="{{images}}"
+- name: find image IDs
+  template:
+    src: "image.j2"
+    dest: "{{workdir}}13-image-{{item.name}}.tf"
+  with_items: "[{{images|default([])|list()}}]"
+  when: (images|default([])|length) >0
+
 - name: instances
   template:
     src: aws_instance.j2

@@ -1,0 +1,16 @@
+{# placeholder for image data source #}
+
+data "aws_ami" "{{item.name}}" {
+  most_recent = true
+  filter {
+    name = "name"
+    values = {{ item.namefilter | to_json }}
+  }
+}
+
+output "image_{{item.name}}_id" {
+  value = "${aws_ami.{{item.name}}.image_id}"
+}
+output "image_{{item.name}}_name" {
+  value = "${aws_ami.{{item.name}}.name}"
+}
