@@ -132,12 +132,12 @@ resource "aws_instance" "{{ec2.name}}" {
         Project = "{{project}}"
         Application = "{{app}}"
 {% if ec2.tags is defined %}
-{% for k, v in ec2.tags.iteritems() %}
+{% for k, v in ec2.tags.items() %}
         {{k}} = "{{v}}"
 {% endfor %}
 {% endif %}
 {% if common.tags is defined %}
-{% for k, v in common.tags.iteritems() %}
+{% for k, v in common.tags.items() %}
         {{k}} = "{{v}}"
 {% endfor %}
 {% endif %}
