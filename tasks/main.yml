@@ -13,6 +13,8 @@
   set_fact:
     _mynic: "{{_mynic|default([])+(item.nic|default([]))}}"
   with_items: "{{vms|list}}"
+  loop_control:
+    label: "{{item.name}}"
 
 - name: import state from other terraform projects
   template:
@@ -57,7 +59,6 @@
   with_items: "{{datafiles|selectattr('singleton')|list}}"
   when: (datafiles|default([])|selectattr('singleton')|list|length) > 0
 
-- debug: msg="{{images}}"
 - name: find image IDs
   template:
     src: "image.j2"
@@ -72,6 +73,8 @@
   vars:
     templates: "{{datafiles|default([])|rejectattr('singleton')|list}}"
   with_items: "[{{vms|default([])|list()}}]"
+  loop_control:
+    label: "{{item.name}}"
 
 - name: classic load balancers
   template:
