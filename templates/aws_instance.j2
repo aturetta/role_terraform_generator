@@ -34,6 +34,8 @@ resource "aws_network_interface" "{{ec2.name}}-nic{{loop.index0}}" {
 {% set ipcount = [0] %}
     private_ips = [{% for ip in (nic.private_ip if (nic.private_ip is not string) else [nic.private_ip]) %} {% if ip is string %} {{ipcomma()}}{% if ip %}"{{ip}}"{% endif %} {% else %} {{ipcomma()}}{% if ip.priv is defined and ip.priv %}"{{ip.priv}}"{% endif %} {% endif %} {% set undefined = ipcount.append(ipcount.pop() +1) %} {% endfor %}]
     private_ips_count = {{ipcount.pop()}}
+{% else %}
+    private_ips_count = 1
 {% endif %}
 {% if nic.sg is defined %}
 {% set sgcomma = joiner(',') %}
