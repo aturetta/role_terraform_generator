@@ -31,7 +31,7 @@ resource "aws_network_interface" "{{ec2.name}}-nic{{loop.index0}}" {
     subnet_id = "${element(split(",",local.{{nic.subnet}}),index(list("a","b","c","d","e"),"{{ec2.az}}"))}"
 {% if nic.private_ip is defined %}
 {% set ipcomma = joiner(',') %}
-{% set ipcount = [0] %}
+{% set ipcount = [-1] %}
     private_ips = [{% for ip in (nic.private_ip if (nic.private_ip is not string) else [nic.private_ip]) %} {% if ip is string %} {{ipcomma()}}{% if ip %}"{{ip}}"{% endif %} {% else %} {{ipcomma()}}{% if ip.priv is defined and ip.priv %}"{{ip.priv}}"{% endif %} {% endif %} {% set undefined = ipcount.append(ipcount.pop() +1) %} {% endfor %}]
     private_ips_count = {{ipcount.pop()}}
 {% endif %}
