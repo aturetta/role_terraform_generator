@@ -145,7 +145,7 @@ resource "aws_instance" "{{ec2.name}}" {
 {% endif %}
 {% if common.tags is defined %}
 {% for k, v in common.tags.items() %}
-        {{k}} = "{{v}}"
+        "{{k}}" = "{{v}}"
 {% endfor %}
 {% endif %}
     }
