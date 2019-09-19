@@ -80,8 +80,10 @@
   template:
     src: aws_elb.j2
     dest: "{{workdir}}30-balancers.tf"
+  when: load_balancers is defined
 
 - name: load balancers
   template:
     src: aws_lb.j2
     dest: "{{workdir}}31-balancers.tf"
+  when: load_balancers is defined
