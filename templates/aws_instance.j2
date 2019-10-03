@@ -44,6 +44,9 @@ resource "aws_network_interface" "{{ec2.name}}-nic{{loop.index0}}" {
         Environment = "{{env}}"
         Project = "{{project}}"
         Application = "{{app}}"
+        {% for k, v in (elb.tags|default({}) | combine(common.tags|default({})) ).items() %}
+        "{{k}}" = "{{v}}"
+        {% endfor %}
     }
 {% if nic.skip_source_check|default(False) %}
     source_dest_check = false
