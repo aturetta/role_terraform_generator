@@ -17,7 +17,7 @@ resource "aws_security_group" "sg-{{base}}-{{sg.name}}" {
         {% set destcomma = joiner(',') %}
         cidr_blocks = [{% for cidr in (rule.dest if (rule.dest is not string) else [rule.dest]) %} {{destcomma()}}"{{cidr}}" {% endfor %}]
         {% if rule.descr is defined %}
-            description = "{{rule.descr|default('')}}"
+        description = "{{rule.descr|default('')}}"
         {% endif %}
     }
 {% endfor %}
@@ -30,6 +30,9 @@ resource "aws_security_group" "sg-{{base}}-{{sg.name}}" {
         Name = "sg-{{base}}-{{sg.name}}"
         Environment = "{{env}}"
         Project = "{{project}}"
+        {% for k, v in (sg.tags|default({}) | combine(common.tags|default({})) ).items() %}
+        "{{k}}" = "{{v}}"
+        {% endfor %}
     }
 
 {% for rule in sg.ingress %}

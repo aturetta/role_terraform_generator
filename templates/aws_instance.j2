@@ -62,6 +62,9 @@ resource "aws_eip" "{{ec2.name}}_{{eip_name}}" {
 {% if ip.descr is defined %}
     Description = "{{ip.descr}}"
 {% endif %}
+{% for k, v in (elb.tags|default({}) | combine(common.tags|default({})) ).items() %}
+    "{{k}}" = "{{v}}"
+{% endfor %}
   }
 }
 {#% set ignored = exported.extend([{'name': ec2.name+'_'+eip_name, 'value': '${aws_eip.'+ec2.name+'_'+eip_name+'.public_ip}'}]) %#}

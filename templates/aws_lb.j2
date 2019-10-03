@@ -33,7 +33,7 @@ resource "aws_lb" "{{lbname}}" {
         Project = "{{project}}"
         Application = "{{app}}"
         {% for k, v in (elb.tags|default({}) | combine(common.tags|default({})) ).items() %}
-                "{{k}}" = "{{v}}"
+        "{{k}}" = "{{v}}"
         {% endfor %}
     }
 
