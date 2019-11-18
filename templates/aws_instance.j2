@@ -44,7 +44,7 @@ resource "aws_network_interface" "{{ec2.name}}-nic{{loop.index0}}" {
         Environment = "{{env}}"
         Project = "{{project}}"
         Application = "{{app}}"
-        {% for k, v in (elb.tags|default({}) | combine(common.tags|default({})) ).items() %}
+        {% for k, v in (nic.tags|default({}) | combine(common.tags|default({})) ).items() %}
         "{{k}}" = "{{v}}"
         {% endfor %}
     }
@@ -65,7 +65,7 @@ resource "aws_eip" "{{ec2.name}}_{{eip_name}}" {
 {% if ip.descr is defined %}
     Description = "{{ip.descr}}"
 {% endif %}
-{% for k, v in (elb.tags|default({}) | combine(common.tags|default({})) ).items() %}
+{% for k, v in (ip.tags|default({}) | combine(common.tags|default({})) ).items() %}
     "{{k}}" = "{{v}}"
 {% endfor %}
   }
