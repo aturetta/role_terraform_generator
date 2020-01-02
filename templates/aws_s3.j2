@@ -1,0 +1,25 @@
+{% for bucket in object_storage|default({}) %}
+resource "aws_s3_bucket" "{{bucket.name}}" {
+  bucket = "{{bucket.name}}"
+  acl    = "private"
+
+  tags = {
+    Name        = "{{bucket.name}}"
+{% for k, v in (bucket.tags|default({}) | combine(common.tags|default({})) ).items() %}
+    "{{k}}"     = "{{v}}"
+{% endfor %}
+  }
+}
+
+{% if bucket.sqs is defined %}
+resource "aws_s3_bucket_notification" "{{bucket.name}}_to_{{bucket.sqs}}" {
+  bucket = "${aws_s3_bucket.{{bucket.name}}.id}"
+
+  queue {
+    queue_arn     = "${aws_sqs_queue.{{bucket.sqs}}.arn}"
+    events        = ["s3:ObjectCreated:*"]
+  }
+}
+{% endif %}
+
+{% endfor %}

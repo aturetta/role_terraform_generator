@@ -1,0 +1,54 @@
+{% for queue in queues|default({}) %}
+resource "aws_sqs_queue" "{{queue.name}}" {
+  name = "{{queue.name}}"
+  delay_seconds             = 0
+  max_message_size          = 2048
+  message_retention_seconds = 86400
+  receive_wait_time_seconds = 20
+{% if queue.deadletter is defined %}
+  redrive_policy            = "{\"deadLetterTargetArn\":\"${aws_sqs_queue.{{queue.deadletter}}.arn}\",\"maxReceiveCount\":4}"
+{% endif %}
+
+  tags = {
+    Name        = "{{queue.name}}"
+{% for k, v in (bucket.tags|default({}) | combine(common.tags|default({})) ).items() %}
+    "{{k}}"     = "{{v}}"
+{% endfor %}
+  }
+}
+
+{% for bucket in object_storage|selectattr("sqs",'defined')|selectattr("sqs",'eq',queue.name)|default({}) %}
+# allow from bucket: "{{bucket.name}}"
+
+{% if loop.first %}
+resource  "aws_sqs_queue_policy" "s3permission_to_write_to_{{queue.name}}" {
+  queue_url = "${aws_sqs_queue.{{queue.name}}.id}"
+  policy =  <<EOF
+  {
+    "Version": "2012-10-17",
+    "Id": "SQSPolicy_s3permission_to_write_to_{{queue.name}}",
+    "Statement": [
+{% endif %}
+{
+  "Sid": "permission_for_bucket_{{bucket.name}}",
+  "Effect": "Allow",
+  "Principal": {
+    "AWS": "*"
+  },
+  "Action": "SQS:SendMessage",
+  "Resource": "${aws_sqs_queue.{{queue.name}}.arn}",
+  "Condition": {
+    "ArnLike": {
+      "aws:SourceArn": "arn:aws:s3:*:*:{{bucket.name}}"
+    }
+  }
+}
+{% if loop.last %}
+    ]
+  }
+EOF
+}
+{% else %},{% endif %}
+{% endfor %}
+
+{% endfor %}

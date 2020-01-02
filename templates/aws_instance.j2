@@ -31,7 +31,7 @@ resource "aws_network_interface" "{{ec2.name}}-nic{{loop.index0}}" {
     subnet_id = "${element(split(",",local.{{nic.subnet}}),index(list("a","b","c","d","e"),"{{ec2.az}}"))}"
 {% if nic.private_ip is defined %}
 {% set ipcomma = joiner(',') %}
-{% set ipcount = [0] %}
+{% set ipcount = [-1] %}
     private_ips = [{% for ip in (nic.private_ip if (nic.private_ip is not string) else [nic.private_ip]) %} {% if ip is string %} {{ipcomma()}}{% if ip %}"{{ip}}"{% endif %} {% else %} {{ipcomma()}}{% if ip.priv is defined and ip.priv %}"{{ip.priv}}"{% endif %} {% endif %} {% set undefined = ipcount.append(ipcount.pop() +1) %} {% endfor %}]
     private_ips_count = {{ipcount.pop()}}
 {% else %}
@@ -46,6 +46,9 @@ resource "aws_network_interface" "{{ec2.name}}-nic{{loop.index0}}" {
         Environment = "{{env}}"
         Project = "{{project}}"
         Application = "{{app}}"
+        {% for k, v in (nic.tags|default({}) | combine(common.tags|default({})) ).items() %}
+        "{{k}}" = "{{v}}"
+        {% endfor %}
     }
 {% if nic.skip_source_check|default(False) %}
     source_dest_check = false
@@ -64,6 +67,9 @@ resource "aws_eip" "{{ec2.name}}_{{eip_name}}" {
 {% if ip.descr is defined %}
     Description = "{{ip.descr}}"
 {% endif %}
+{% for k, v in (ip.tags|default({}) | combine(common.tags|default({})) ).items() %}
+    "{{k}}" = "{{v}}"
+{% endfor %}
   }
 }
 {#% set ignored = exported.extend([{'name': ec2.name+'_'+eip_name, 'value': '${aws_eip.'+ec2.name+'_'+eip_name+'.public_ip}'}]) %#}
@@ -142,12 +148,12 @@ resource "aws_instance" "{{ec2.name}}" {
         Application = "{{app}}"
 {% if ec2.tags is defined %}
 {% for k, v in ec2.tags.items() %}
-        {{k}} = "{{v}}"
+        "{{k}}" = "{{v}}"
 {% endfor %}
 {% endif %}
 {% if common.tags is defined %}
 {% for k, v in common.tags.items() %}
-        {{k}} = "{{v}}"
+        "{{k}}" = "{{v}}"
 {% endfor %}
 {% endif %}
     }

@@ -1,7 +1,7 @@
 {% for elb in (load_balancers|default([])) %}
 {% if elb.type is defined and elb.type != 'classic' %}
 {% if elb.name is defined %}
-{% set lbname = 'lb-'+base+'-'+elb.name %}
+{% set lbname = 'lb-'+('' if elb.nobase is not defined or elb.nobase else base+'-')+elb.name %}
 {% else %}
 {% set lbname = 'lb-'+base %}
 {% endif %}
@@ -26,13 +26,15 @@ resource "aws_lb" "{{lbname}}" {
 {{elbsncomma()}}"${element(split(",",local.{{elb.subnet}}),index(list("a","b","c","d","e"),"{{zone}}"))}"
 {% endfor %} ]
 
-
     enable_cross_zone_load_balancing = true
     tags {
         Name = "{{lbname}}"
         Environment = "{{env}}"
         Project = "{{project}}"
         Application = "{{app}}"
+        {% for k, v in (elb.tags|default({}) | combine(common.tags|default({})) ).items() %}
+        "{{k}}" = "{{v}}"
+        {% endfor %}
     }
 
 {% if vms is defined or elb.sg is defined %}

@@ -6,6 +6,7 @@ data "aws_ami" "{{item.name}}" {
     name = "name"
     values = {{ item.namefilter | to_json }}
   }
+  owners = {{ item.owners | default(['amazon', 'aws-marketplace'])| to_json }}
 }
 
 output "image_{{item.name}}_id" {

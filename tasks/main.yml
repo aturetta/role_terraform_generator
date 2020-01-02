@@ -80,8 +80,22 @@
   template:
     src: aws_elb.j2
     dest: "{{workdir}}30-balancers.tf"
+  when: load_balancers is defined
 
 - name: load balancers
   template:
     src: aws_lb.j2
     dest: "{{workdir}}31-balancers.tf"
+  when: load_balancers is defined
+
+- name: object storage
+  template:
+    src: aws_s3.j2
+    dest: "{{workdir}}40-buckets.tf"
+  when: object_storage is defined
+
+- name: queueing
+  template:
+    src: aws_sqs.j2
+    dest: "{{workdir}}50-queues.tf"
+  when: queues is defined

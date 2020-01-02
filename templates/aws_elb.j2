@@ -48,6 +48,9 @@ resource "aws_elb" "{{lbname}}" {
         Environment = "{{env}}"
         Project = "{{project}}"
         Application = "{{app}}"
+        {% for k, v in (elb.tags|default({}) | combine(common.tags|default({})) ).items() %}
+        "{{k}}" = "{{v}}"
+        {% endfor %}
     }
 
 {% if vms is defined or elb.sg is defined %}
