@@ -1,10 +1,45 @@
 {% set base=env ~ "-" ~ project ~ ( "-" ~ app if app is defined else "" ) %}
+{% import 'common.inc.j2' as funcs with context %}
 
-resource "aws_vpc" "{{base}}" {
-    cidr_block = "{{vpc.cidr}}"
-    enable_dns_hostnames = true
+resource "aws_subnet" "{{base~'_'~sn.name}}" {
+    vpc_id = aws_vpc.{{base}}.id
+    cidr_block = "{{sn.cidr}}"
+    availability_zone = "{{sn.az}}"
 
-    tags = {
-       Name = "${{base}}"
+{{ funcs.tags(base~'_'~sn.name, sn.tags|default([])) }}
+}
+
+{% if sn.nat_gw is defined and sn.nat_gw %}
+
+resource "aws_eip" "{{base~'_nat_'~sn.name}}" {
+    vpc = true
+{{ funcs.tags(base~'_nat_'~sn.name, sn.tags|default([])) }}
+}
+
+resource "aws_nat_gateway" "{{base~'_'~sn.name}}" {
+    allocation_id = aws_eip.{{base~'_nat_'~sn.name}}.id
+    subnet_id     = aws_subnet.{{base~'_'~sn.name}}.id
+
+{{ funcs.tags(base~'_nat_'~sn.name, sn.tags|default([])) }}
+}
+{% endif %}
+
+resource "aws_route_table" "{{base~'_'~sn.name}}" {
+    vpc_id = aws_vpc.{{base}}.id
+
+    route {
+        cidr_block = "0.0.0.0/0"
+        {% if sn.nat_gw is defined and sn.nat_gw %}
+        nat_gateway_id = aws_nat_gateway.{{base~'_'~sn.name}}.id
+        {% else %}
+        gateway_id = aws_internet_gateway.{{base}}.id
+        {% endif %}
     }
+
+    {{ funcs.tags(base~'_'~sn.name, sn.tags|default([])) }}
+}
+
+resource "aws_route_table_association" "{{base~'_'~sn.name}}" {
+    subnet_id = aws_subnet.{{base~'_'~sn.name}}.id
+    route_table_id = aws_route_table.{{base~'_'~sn.name}}.id
 }

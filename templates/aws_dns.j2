@@ -1,0 +1,39 @@
+{% set base=env ~ "-" ~ project ~ ( "-" ~ app if app is defined else "" ) %}
+{% import 'common.inc.j2' as funcs with context %}
+
+resource "aws_route53_zone" "{{base}}" {
+  name = "{{zone.fqdn}}"
+  {{ funcs.tags(base, zone.tags|default([])) }}
+}
+
+{% for subzone in zone.nested|default([]) %}
+
+resource "aws_route53_zone" "{{base~'_'~subzone.prefix}}" {
+  name = "{{subzone.prefix}}.{{zone.fqdn}}"
+  {% if subzone.private is defined and subzone.private %}
+
+  vpc {
+    vpc_id = aws_vpc.{{base}}.id
+  }
+  {% endif %}
+  {{ funcs.tags(subzone.prefix, subzone.tags|default([])) }}
+}
+
+
+resource "aws_route53_record" "{{base~'_'~subzone.prefix~'-ns'}}" {
+  zone_id = aws_route53_zone.{{base}}.zone_id
+  name    = "{subzone.prefix}}.{{zone.fqdn}}"
+  type    = "NS"
+  ttl     = "300"
+
+  records = aws_route53_zone.{{base~'_'~subzone.prefix}}.name_servers
+}
+
+output "zone-{{base~'_'~subzone.prefix}}" {
+  value = aws_route53_zone.{{base~'_'~subzone.prefix}}
+}
+
+{% endfor %}
+output "zone-{{base}}" {
+  value = aws_route53_zone.{{base}}
+}

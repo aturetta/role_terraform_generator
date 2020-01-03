@@ -1,0 +1,12 @@
+
+{% macro tags(name, mytags=[]) -%}
+{% if common is defined -%}
+{% set mytags = mytags | combine(common.tags|default({})) %}
+{%- endif %}
+    tags = {
+       Name = "{{name}}"
+{% for k, v in mytags.items() %}
+       "{{k}}" = "{{v}}"
+{% endfor %}
+    }
+{%- endmacro %}

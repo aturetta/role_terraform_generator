@@ -2,3 +2,20 @@
   template:
     src: aws_vpc.j2
     dest: "{{workdir}}04-vpc.tf"
+
+- name: allsubnets
+  template:
+    src: aws_subnet.j2
+    dest: "{{workdir}}05-subnet-{{sn.name}}.tf"
+  loop: "{{vpc.subnets|list}}"
+  loop_control:
+    loop_var: sn
+
+- name: DNS zones
+  template:
+    src: aws_dns.j2
+    dest: "{{workdir}}06-zone-{{zone.fqdn}}.tf"
+  loop: "{{dns|default([])|list}}"
+  loop_control:
+    loop_var: zone
+  when: dns is defined

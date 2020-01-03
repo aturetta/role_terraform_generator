@@ -1,17 +1,18 @@
 {% set base=env ~ "-" ~ project ~ ( "-" ~ app if app is defined else "" ) %}
+{% import 'common.inc.j2' as funcs with context %}
 
 resource "aws_vpc" "{{base}}" {
     cidr_block = "{{vpc.cidr}}"
     enable_dns_hostnames = true
 
-    tags = {
-       Name = "{{base}}"
-    }
+{{ funcs.tags(base, vpc.tags|default([])) }}
 }
 
 {% if vpc.internet_gw is defined and vpc.internet_gw %}
 resource "aws_internet_gateway" "{{base}}" {
     vpc_id = aws_vpc.{{base}}.id
+
+{{ funcs.tags(base, vpc.tags|default([])) }}
 }
 
 {% endif %}
