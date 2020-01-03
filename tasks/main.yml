@@ -1,6 +1,6 @@
 - name: provider templates
   template:
-    src: "{{item}}-provider.j2"
+    src: "{{item}}_provider.j2"
     dest: "{{workdir}}00-provider-{{item}}.tf"
   with_items: "{{terraform_providers|default(['aws'])}}"
 
@@ -12,21 +12,28 @@
 - name: concat nic lists
   set_fact:
     _mynic: "{{_mynic|default([])+(item.nic|default([]))}}"
-  with_items: "{{vms|list}}"
+  with_items: "{{vms|default([])|list}}"
   loop_control:
     label: "{{item.name}}"
+- name: set empty defaults
+  set_fact:
+    common: {}
+  when: common is not defined
 
 - name: import state from other terraform projects
   template:
     src: "importstate.j2"
     dest: "{{workdir}}02-importstate.tf"
   vars:
-    allsubnets: "{{(_mynic|default([]) + common.nic|default([]) + load_balancers|default([]))|map(attribute='subnet')|unique()|list}}"
+    allsubnets: "{{(_mynic|default([]) + ((common.nic)|default([])) + load_balancers|default([]))|map(attribute='subnet')|unique()|list}}"
 
 - name: local variables
   template:
     src: "locals.j2"
     dest: "{{workdir}}03-locals.tf"
+
+- include_tasks: network.yml
+  when: vpc is defined
 
 - name: define security groups
   template:

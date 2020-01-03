@@ -5,6 +5,8 @@ provider "aws" {
     region = "{{region}}"
 {% if profile is defined %}
     profile = "{{profile}}"
+{% endif %}
+{% if credentials is defined %}
     shared_credentials_file = "credentials"
 {% endif %}
 }

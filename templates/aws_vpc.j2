@@ -1,0 +1,17 @@
+{% set base=env ~ "-" ~ project ~ ( "-" ~ app if app is defined else "" ) %}
+
+resource "aws_vpc" "{{base}}" {
+    cidr_block = "{{vpc.cidr}}"
+    enable_dns_hostnames = true
+
+    tags = {
+       Name = "{{base}}"
+    }
+}
+
+{% if vpc.internet_gw is defined and vpc.internet_gw %}
+resource "aws_internet_gateway" "{{base}}" {
+    vpc_id = aws_vpc.{{base}}.id
+}
+
+{% endif %}

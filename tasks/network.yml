@@ -1,0 +1,4 @@
+- name: vpc
+  template:
+    src: aws_vpc.j2
+    dest: "{{workdir}}04-vpc.tf"
