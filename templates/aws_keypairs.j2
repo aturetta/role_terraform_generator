@@ -1,0 +1,8 @@
+{% for keypair in keypairs %}
+
+resource "aws_key_pair" "{{keypair.name}}" {
+  key_name   = "{{keypair.name}}"
+  public_key = "{{lookup('file', keypair.pub_key)}}"
+}
+
+{% endfor %}

@@ -56,6 +56,12 @@
   with_items:
   - ec2_assume_role_policy.json
 
+- name: EC2 key keypairs
+  template:
+    src: aws_keypairs.j2
+    dest: "{{workdir}}14-keypairs.tf"
+  when: keypairs is defined
+
 #- name: get datafile definition
 #  debug: msg="{{(datafiles|selectattr("name", "match", "^apic-user-data$")|map(attribute="singleton")|first)}}"
 
