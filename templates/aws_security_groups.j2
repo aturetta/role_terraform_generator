@@ -25,11 +25,9 @@ resource "aws_security_group" "sg-{{base}}-{{sg.name}}" {
     description = "{{sg.descr|default('')}}"
 {% endif %}
 
-    vpc_id = "${local.vpc}"
-    tags {
+    vpc_id = local.vpc
+    tags = {
         Name = "sg-{{base}}-{{sg.name}}"
-        Environment = "{{env}}"
-        Project = "{{project}}"
         {% for k, v in (sg.tags|default({}) | combine(common.tags|default({})) ).items() %}
         "{{k}}" = "{{v}}"
         {% endfor %}
@@ -44,7 +42,7 @@ resource "aws_security_group" "sg-{{base}}-{{sg.name}}" {
         to_port = {{rule.to_port|default(65535 if (proto == 'tcp' or proto == 'udp') else -1 )}}
         protocol = "{{proto}}"
 {% if rule.source is defined %}
-## {{rule.source}}   string={{rule.source is string}} starts={{rule.source is string and rule.source.startswith('sg-')}}
+{# # {{rule.source}}   string={{rule.source is string}} starts={{rule.source is string and rule.source.startswith('sg-')}} #}
 {% if rule.source is string and rule.source.startswith('sg-') %}
         security_groups = ["{{rule.source}}"]
 {% else %}
@@ -64,7 +62,7 @@ resource "aws_security_group" "sg-{{base}}-{{sg.name}}" {
 }
 {% if sg.exported is defined and sg.exported %}
 output "sg-{{sg.name}}" {
-  value = "${aws_security_group.sg-{{base}}-{{sg.name}}.id}"
+  value = aws_security_group.sg-{{base}}-{{sg.name}}.id
 }
 {% endif %}
 {% endfor %}
