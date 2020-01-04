@@ -20,6 +20,16 @@ resource "aws_internet_gateway" "{{base}}" {
 locals {
 	vpc = aws_vpc.{{base}}.id
 {% for subnet in vpc.subnets|map(attribute='shortname')|list|unique %}
-  {{subnet}} = join(",",[{% for mynets in vpc.subnets|selectattr("shortname","equalto",subnet)|map(attribute='name') %}aws_subnet.{{base~'_'~mynets}}.id,{% endfor %}])
+  {{subnet}} = join(",",[{% for mynets in vpc.subnets|selectattr("shortname","equalto",subnet)|sort(attribute='az')|map(attribute='name') %}aws_subnet.{{base~'_'~mynets}}.id,{% endfor %}])
 {% endfor %}
 }
+
+output "vpc-id" {
+  value = local.vpc
+}
+
+{% for subnet in vpc.subnets|map(attribute='shortname')|list|unique %}
+output "{{subnet}}" {
+  value = local.{{subnet}}
+}
+{% endfor %}
