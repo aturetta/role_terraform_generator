@@ -4,25 +4,24 @@
 ##
 data "terraform_remote_state" "{{rmt.name|default(rmt.key)}}" {
     backend = "s3"
-    config {
+    config = {
         encrypt = "true"
         bucket = "tf-{{rmt.region|default(region)}}-{{rmt.account_id|default(aws_account_id)}}"
         key    = "{{rmt.key}}/terraform.tfstate"
         region = "{{rmt.region|default(region)}}"
 {% if profile is defined or rmt.profile is defined %}
         profile = "{{rmt.profile|default(profile)}}"
-        shared_credentials_file = "credentials"
 {% endif %}
     }
 }
 {% if rmt.vpc is defined %}
 locals {
-	vpc = "${data.terraform_remote_state.{{rmt.name|default(rmt.key)}}.{{rmt.vpc|default('vpc-id')}}}"
+	vpc = data.terraform_remote_state.{{rmt.name|default(rmt.key)}}.outputs.{{rmt.vpc|default('vpc-id')}}
 {% for net in allsubnets|default([])%}
 {% if rmt[net] is defined %}
   {{net}} = "{{rmt[net]}}"
 {%else%}
-  {{net}} = "${data.terraform_remote_state.{{rmt.name|default(rmt.key)}}.{{net}}}"
+  {{net}} = data.terraform_remote_state.{{rmt.name|default(rmt.key)}}.outputs.{{net}}
 {%endif%}
 {% endfor %}
 }
