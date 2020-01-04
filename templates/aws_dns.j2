@@ -22,7 +22,7 @@ resource "aws_route53_zone" "{{base~'_'~subzone.prefix}}" {
 
 resource "aws_route53_record" "{{base~'_'~subzone.prefix~'-ns'}}" {
   zone_id = aws_route53_zone.{{base}}.zone_id
-  name    = "{subzone.prefix}}.{{zone.fqdn}}"
+  name    = "{{subzone.prefix}}.{{zone.fqdn}}"
   type    = "NS"
   ttl     = "300"
 
