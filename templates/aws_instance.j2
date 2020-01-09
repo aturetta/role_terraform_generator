@@ -1,7 +1,7 @@
 {% set ec2=item %}
 {% set charcode = {'a': 0,'b': 1,'c': 2,'d': 3,'e': 4,'f': 5,'g': 6,'h': 7} %}
 
-{#vpc_security_group_ids = [ "${data.terraform_remote_state.{{vpc}}.{{default_sg|default('sg-core-default')}}}"{% if nic0.sg is defined %},"${aws_security_group.sg-{{base}}-{{nic0.sg}}.id}"{% endif %} ]
+{#vpc_security_group_ids = [ data.terraform_remote_state.{{vpc}}.outputs.{{default_sg|default('sg-core-default')}}{% if nic0.sg is defined %},aws_security_group.sg-{{base}}-{{nic0.sg}}.id{% endif %} ]
 ##subnet_id = "${element(split(",",data.terraform_remote_state.{{vpc}}.{{nic0.subnet}}),index(list("a","b","c","d","e"),"{{ec2.az|default(az)}}"))}"#}
 
 {% for t in templates %}
@@ -10,13 +10,13 @@ data "template_file" "{{t.name}}-{{ec2.name}}" {
 {% include t.source %}
 
 EOF
-  vars {
+  vars = {
     hostname = "{{ec2.name}}"
     vpc = local.vpc
 
 {% for nic in ec2.nic|default(common.nic) %}
     dev{{loop.index}} = "{{nic.device|default('eth'~loop.index0)}}"
-    cidr{{loop.index}} = "${data.aws_subnet.{{nic.subnet}}.{{charcode[ec2.az|default('a')]}}.cidr_block}"
+    cidr{{loop.index}} = data.aws_subnet.{{nic.subnet}}.{{charcode[ec2.az|default('a')]}}.cidr_block
 {% endfor %}
   }
 }
@@ -28,7 +28,7 @@ EOF
 
 resource "aws_network_interface" "{{ec2.name}}-nic{{loop.index0}}" {
     description = "{{ec2.name}}-{{nic.name|default(nic.device|default('nic'~loop.index0))}} network interface"
-    subnet_id = "${element(split(",",local.{{nic.subnet}}),index(list("a","b","c","d","e"),"{{ec2.az}}"))}"
+    subnet_id = element(split(",",local.{{nic.subnet}}),index(list("a","b","c","d","e"),"{{ec2.az}}"))
 {% if nic.private_ip is defined %}
 {% set ipcomma = joiner(',') %}
 {% set ipcount = [-1] %}
@@ -39,7 +39,9 @@ resource "aws_network_interface" "{{ec2.name}}-nic{{loop.index0}}" {
 {% endif %}
 {% if nic.sg is defined %}
 {% set sgcomma = joiner(',') %}
-    security_groups = [ {% for sg in (nic.sg if (nic.sg is not string) else [nic.sg]) %} {{sgcomma()}}{%if 'terraform' in sg or sg.startswith('sg-')%}"{{sg}}"{%else%}"${aws_security_group.sg-{{base}}-{{sg}}.id}"{%endif%} {% endfor %} ]
+    security_groups = [ {% for sg in (nic.sg if (nic.sg is not string) else [nic.sg]) %}{{sgcomma()}}
+{%if 'terraform' in sg or sg.startswith('sg-')%}{{sg}}{%else%}aws_security_group.sg-{{base}}-{{sg}}.id{%endif%}
+{% endfor %}     ]
 {% endif %}
     tags = {
         Name = "{{ec2.name}}-{{nic.name|default(nic.device|default('nic'~loop.index0))}}"
@@ -69,10 +71,10 @@ resource "aws_eip" "{{ec2.name}}_{{eip_name}}" {
 {% endfor %}
   }
 }
-{#% set ignored = exported.extend([{'name': ec2.name+'_'+eip_name, 'value': '${aws_eip.'+ec2.name+'_'+eip_name+'.public_ip}'}]) %#}
+{#% set ignored = exported.extend([{'name': ec2.name+'_'+eip_name, 'value': 'aws_eip.'+ec2.name+'_'+eip_name+'.public_ip'}]) %#}
 {% if ip.priv is defined and ip.priv %}
 resource "aws_eip_association" "eip_assoc_{{ec2.name}}_{{eip_name}}" {
-  allocation_id = "${aws_eip.{{ec2.name}}_{{eip_name}}.id}"
+  allocation_id = aws_eip.{{ec2.name}}_{{eip_name}}.id
   network_interface_id         = aws_network_interface.{{ec2.name}}-nic{{outer_loop.index0}}.id
   private_ip_address = "{{ip.priv}}"
 }
@@ -126,10 +128,10 @@ resource "aws_instance" "{{ec2.name}}" {
 {% set _datafile = (datafiles|default([])|selectattr("name", "match", '^'~ _metadata ~'$')|first|default(false)) %}
 {% if _datafile %}
 {% if _datafile.singleton|default(false) %}
-    user_data = "${data.template_file.{{_metadata}}.rendered}"
+    user_data = data.template_file.{{_metadata}}.rendered
 {% endif %} {# singleton #}
 {% if not _datafile.singleton|default(false) %}
-    user_data = "${data.template_file.{{_metadata}}-{{ec2.name}}.rendered}"
+    user_data = data.template_file.{{_metadata}}-{{ec2.name}}.rendered
 {% endif %} {# not singleton #}
 {% else %} {# datafile #}
     ## user_data {{_metadata}} not found
@@ -181,16 +183,16 @@ resource "aws_volume_attachment" "ebs_att_{{ec2.name}}_dsk{{dskoffset+loop.index
 
 {% if (ec2.exported is defined and ec2.exported) or (common.exported is defined and common.exported) %}
 output "{{ec2.name}}" {
-  value = "${aws_instance.{{ec2.name}}.id}"
+  value = aws_instance.{{ec2.name}}.id
 }
 output "{{ec2.name}}_ip" {
-  value = "${aws_instance.{{ec2.name}}.private_ip}"
+  value = aws_instance.{{ec2.name}}.private_ip
 }
 {% endif %}
 {% if (ec2.dns is defined or common.dns is defined) %}
 resource "null_resource" "dns-{{ec2.name}}" {
     triggers {
-        instance_ids = "${aws_instance.{{ec2.name}}.id}"
+        instance_ids = aws_instance.{{ec2.name}}.id
     }
     depends_on = [ "aws_instance.{{ec2.name}}" ]
 

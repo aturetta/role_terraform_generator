@@ -10,8 +10,8 @@ data "aws_ami" "{{item.name}}" {
 }
 
 output "image_{{item.name}}_id" {
-  value = "${data.aws_ami.{{item.name}}.image_id}"
+  value = data.aws_ami.{{item.name}}.image_id
 }
 output "image_{{item.name}}_name" {
-  value = "${data.aws_ami.{{item.name}}.name}"
+  value = data.aws_ami.{{item.name}}.name
 }

@@ -14,7 +14,7 @@ resource "aws_elb" "{{lbname}}" {
 {% endif %}
 {% if elb.sg is defined %}
 {% set elbsgcomma = joiner(',') %}
-    security_groups = [ {% for sg in (elb.sg if (elb.sg is not string) else [elb.sg]) %} {{elbsgcomma()}}{%if 'terraform' in sg%}"{{sg}}"{%else%}"${aws_security_group.sg-{{base}}-{{sg}}.id}"{%endif%} {% endfor %} ]
+    security_groups = [ {% for sg in (elb.sg if (elb.sg is not string) else [elb.sg]) %} {{elbsgcomma()}}{%if 'terraform' in sg%}{{sg}}{%else%}aws_security_group.sg-{{base}}-{{sg}}.id{%endif%} {% endfor %} ]
 {% endif %}
 {% set elbsncomma = joiner(',') %}
     subnets = [
@@ -43,7 +43,7 @@ resource "aws_elb" "{{lbname}}" {
     idle_timeout = 3600
     connection_draining = true
     connection_draining_timeout = 5
-    tags {
+    tags = {
         Name = "{{lbname}}"
         Environment = "{{env}}"
         Project = "{{project}}"
@@ -57,11 +57,11 @@ resource "aws_elb" "{{lbname}}" {
     depends_on = [
 {% set elbdepcomma = joiner(',') %}
 {% for ec2 in (vms|default([])) %}
-{{elbdepcomma()}}"aws_instance.{{ec2.name}}"
+{{elbdepcomma()}}aws_instance.{{ec2.name}}
 {% endfor %}
 {% if elb.sg is defined %}
 {% for sg in (elb.sg if (elb.sg is not string) else [elb.sg]) %}
-{% if 'terraform' not in sg  %}{{elbdepcomma()}}"aws_security_group.sg-{{base}}-{{sg}}"{%endif%}
+{% if 'terraform' not in sg  %}{{elbdepcomma()}}aws_security_group.sg-{{base}}-{{sg}}{%endif%}
 {% endfor %}
 {% endif %}
 ]
@@ -71,14 +71,14 @@ resource "aws_elb" "{{lbname}}" {
 {% set instcomma = joiner(',') %}
    instances = [
 {% for ec2 in vms %}
-{{instcomma()}}"${aws_instance.{{ec2.name}}.id}"
+{{instcomma()}}aws_instance.{{ec2.name}}.id}
 {% endfor %}
 {% endif %}
 ]
 }
 {% if (elb.exported is defined and elb.exported) %}
 output "{{lbname}}" {
-  value = "${aws_elb.{{lbname}}.dns_name}"
+  value = aws_elb.{{lbname}}.dns_name"
 }
 {% endif %}
 

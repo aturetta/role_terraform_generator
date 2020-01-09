@@ -27,7 +27,7 @@ resource "aws_lb" "{{lbname}}" {
 {% endfor %} ]
 
     enable_cross_zone_load_balancing = true
-    tags {
+    tags = {
         Name = "{{lbname}}"
         Environment = "{{env}}"
         Project = "{{project}}"
@@ -41,11 +41,11 @@ resource "aws_lb" "{{lbname}}" {
     depends_on = [
 {% set elbdepcomma = joiner(',') %}
 {% for ec2 in (vms|default([])) %}
-{{elbdepcomma()}}"aws_instance.{{ec2.name}}"
+{{elbdepcomma()}}aws_instance.{{ec2.name}}
 {% endfor %}
 {% if elb.sg is defined %}
 {% for sg in (elb.sg if (elb.sg is not string) else [elb.sg]) %}
-{% if 'terraform' not in sg  %}{{elbdepcomma()}}"aws_security_group.sg-{{base}}-{{sg}}"{%endif%}
+{% if 'terraform' not in sg  %}{{elbdepcomma()}}aws_security_group.sg-{{base}}-{{sg}}{%endif%}
 {% endfor %}
 {% endif %}
 ]
@@ -62,7 +62,7 @@ resource "aws_lb_target_group" "{{lbname~'-'~lstn.port}}" {
     name     = "{{lbname~'-'~lstn.port}}"
     port     = {{lstn.port}}
     protocol = "{{lstn.proto|default('TCP')}}"
-    vpc_id   = "${local.vpc}"
+    vpc_id   = local.vpc
     {#    health_check {
             healthy_threshold = 2
             unhealthy_threshold = 2
@@ -75,20 +75,20 @@ resource "aws_lb_target_group" "{{lbname~'-'~lstn.port}}" {
 
 {% for ec2 in vms|default([]) %}
 resource "aws_lb_target_group_attachment" "{{lbname~'-'~ec2.name~'-'~lstn.port}}" {
-  target_group_arn = "${aws_lb_target_group.{{lbname~'-'~lstn.port}}.arn}"
-  target_id        = "${aws_instance.{{ec2.name}}.id}"
+  target_group_arn = aws_lb_target_group.{{lbname~'-'~lstn.port}}.arn
+  target_id        = aws_instance.{{ec2.name}}.id
   port             = {{lstn.port}}
 }
 {% endfor %}
 
 resource "aws_lb_listener" "{{lbname~'_'~lstn.port}}" {
-  load_balancer_arn = "${aws_lb.{{lbname}}.arn}"
+  load_balancer_arn = aws_lb.{{lbname}}.arn
   port              = "{{lstn.port}}"
   protocol          = "{{lstn.proto|default('TCP')}}"
 
   default_action {
     type             = "forward"
-    target_group_arn = "${aws_lb_target_group.{{lbname~'-'~lstn.port}}.arn}"
+    target_group_arn = aws_lb_target_group.{{lbname~'-'~lstn.port}}.arn
   }
 }
 {% endfor %}
@@ -96,7 +96,7 @@ resource "aws_lb_listener" "{{lbname~'_'~lstn.port}}" {
 
 {% if (elb.exported is defined and elb.exported) %}
 output "{{lbname}}" {
-  value = "${aws_lb.{{lbname}}.dns_name}"
+  value = aws_lb.{{lbname}}.dns_name
 }
 {% endif %}
 

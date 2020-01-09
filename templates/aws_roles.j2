@@ -4,14 +4,14 @@
 
 resource "aws_iam_role" "rl-{{rol.name|default(base)}}" {
     name = "{{rol.name|default(base)}}"
-    assume_role_policy = "{{rol.assume_role_policy}}"
+    assume_role_policy = {{rol.assume_role_policy}}
 }
 
 {% for pol in (rol.policies|default([])) %}
 resource "aws_iam_policy_attachment" "attach-{{rol.name|default(base)}}-{{pol}}" {
   name       = "attach-{{rol.name|default(base)}}-{{pol}}"
-  roles      = ["${aws_iam_role.rl-{{rol.name|default(base)}}.name}"]
-  policy_arn = "${aws_iam_policy.{{pol}}.arn}"
+  roles      = [aws_iam_role.rl-{{rol.name|default(base)}}.name]
+  policy_arn = aws_iam_policy.{{pol}}.arn}"
 }
 {% endfor %} {# policies #}
 
@@ -23,7 +23,7 @@ resource "aws_iam_policy_attachment" "attach-{{rol.name|default(base)}}-{{pol}}"
 ##
 resource "aws_iam_instance_profile" "ip-{{prf.name|default(base)}}" {
     name = "{{prf.name|default(base)}}-instance-profile"
-    role = "${aws_iam_role.rl-{{prf.role|default(base)}}.name}"
+    role = aws_iam_role.rl-{{prf.role|default(base)}}.name
 }
 {% endfor %}
 
