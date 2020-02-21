@@ -11,7 +11,7 @@
 
 - name: concat nic lists
   set_fact:
-    _mynic: "{{_mynic|default([])+(item.nic|default([]))}}"
+    _mynic: "{{_mynic|default([])+(item.nic|default([]))+[(item.legacynic|default())]}}"
   with_items: "{{vms|default([])|list}}"
   loop_control:
     label: "{{item.name}}"

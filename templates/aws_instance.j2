@@ -14,16 +14,20 @@ EOF
     hostname = "{{ec2.name}}"
     vpc = "${local.vpc}"
 
-{% for nic in ec2.nic|default(common.nic) %}
+{% for nic in ec2.nic|default(common.nic|default([])) %}
     dev{{loop.index}} = "{{nic.device|default('eth'~loop.index0)}}"
     cidr{{loop.index}} = "${data.aws_subnet.{{nic.subnet}}.{{charcode[ec2.az|default('a')]}}.cidr_block}"
 {% endfor %}
+{% for k,v in (common.vars|default({}) | combine(ec2.vars|default({}))).items() %}
+    {{k}} = "{{v}}"
+{% endfor %}
+
   }
 }
 {% endfor %}
 
 
-{% for nic in ec2.nic|default(common.nic) %}
+{% for nic in ec2.nic|default(common.nic|default([])) %}
 {% set outer_loop = loop %}
 
 resource "aws_network_interface" "{{ec2.name}}-nic{{loop.index0}}" {
@@ -104,12 +108,30 @@ resource "aws_instance" "{{ec2.name}}" {
     {% if instance_profiles is defined %}iam_instance_profile   = "${aws_iam_instance_profile.ip-{{base}}.name}"{% endif %}
     disable_api_termination = true
 
+{% if ec2.legacynic is not defined %}
     network_interface {
       network_interface_id = "${aws_network_interface.{{ec2.name}}-nic0.id}"
       device_index = 0
     }
     depends_on = ["aws_network_interface.{{ec2.name}}-nic0"]
+{% else %}
+    {% set sgcomma = joiner(',') %}
+    vpc_security_group_ids = [ {% for sg in (ec2.legacynic.sg if (ec2.legacynic.sg is not string) else [ec2.legacynic.sg]) %} {{sgcomma()}}{%if 'terraform' in sg or sg.startswith('sg-')%}"{{sg}}"{%else%}"${aws_security_group.sg-{{base}}-{{sg}}.id}"{%endif%} {% endfor %} ]
+{% if ec2.legacynic.private_ip is defined %}
+{% if ec2.legacynic.private_ip is string %}
+    private_ip = "{{ec2.legacynic.private_ip}}"
+{% else %}
+    private_ip = "{{ec2.legacynic.private_ip.priv}}"
+{% endif %}
+{% endif %}
+    subnet_id = "${element(split(",",local.{{ec2.legacynic.subnet}}),index(list("a","b","c","d","e"),"{{ec2.az}}"))}"
+{% endif %}
 
+{% if ec2.ebsoptimized|default(ebsoptimized)|default(True) %}
+ebs_optimized = true
+{% else %}
+ebs_optimized = false
+{% endif %}
 {% set devices = ['f','g','h','i','j','k','l','m','n'] %}
 {% for dsk in (ec2.disk|default(common.disk)) %}
 {% if loop.index >1 %}
@@ -215,7 +237,7 @@ resource "null_resource" "dns-{{ec2.name}}" {
 }
 {% endif %}
 
-{% for nic in ec2.nic|default(common.nic) %}
+{% for nic in ec2.nic|default(common.nic|default([])) %}
 {% if loop.index0 > 0 %}
 resource aws_network_interface_attachment "{{ec2.name}}-nic{{loop.index0}}" {
     depends_on = ["aws_instance.{{ec2.name}}","aws_network_interface.{{ec2.name}}-nic{{loop.index0}}"]
