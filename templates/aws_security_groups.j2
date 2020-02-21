@@ -1,10 +1,11 @@
-{% set base=env ~ "-" ~ project ~ ( "-" ~ app if app is defined else "" ) %}
+{% set mybase=base|default(env ~ "-" ~ project ~ ( "-" ~ app if app is defined else "" )) %}
 {% for sg in (security_groups|default([])) %}
 ##
 ## security group
 ##
-resource "aws_security_group" "sg-{{base}}-{{sg.name}}" {
-    name = "{{base}}-{{sg.name}}-sg"
+
+resource "aws_security_group" "sg-{{mybase}}-{{sg.name}}" {
+    name = "{{mybase}}-{{sg.name}}-sg"
 
     ##
     ## egress rules
@@ -27,7 +28,7 @@ resource "aws_security_group" "sg-{{base}}-{{sg.name}}" {
 
     vpc_id = "${local.vpc}"
     tags {
-        Name = "sg-{{base}}-{{sg.name}}"
+        Name = "sg-{{mybase}}-{{sg.name}}"
         Environment = "{{env}}"
         Project = "{{project}}"
         {% for k, v in (sg.tags|default({}) | combine(common.tags|default({})) ).items() %}
@@ -64,7 +65,7 @@ resource "aws_security_group" "sg-{{base}}-{{sg.name}}" {
 }
 {% if sg.exported is defined and sg.exported %}
 output "sg-{{sg.name}}" {
-  value = "${aws_security_group.sg-{{base}}-{{sg.name}}.id}"
+  value = "${aws_security_group.sg-{{mybase}}-{{sg.name}}.id}"
 }
 {% endif %}
 {% endfor %}
