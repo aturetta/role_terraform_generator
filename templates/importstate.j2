@@ -11,14 +11,16 @@ data "terraform_remote_state" "{{rmt.name|default(rmt.key)}}" {
         region = "{{rmt.region|default(region)}}"
 {% if profile is defined or rmt.profile is defined %}
         profile = "{{rmt.profile|default(profile)}}"
-        shared_credentials_file = "credentials"
+{% if credentials is defined %}
+        shared_credentials_file = "{{credentials}}"
+{% endif %}
 {% endif %}
     }
 }
 {% if rmt.vpc is defined %}
 locals {
 	vpc = "${data.terraform_remote_state.{{rmt.name|default(rmt.key)}}.{{rmt.vpc|default('vpc-id')}}}"
-{% for net in allsubnets|default([])%}
+{% for net in allsubnets|default([])|sort %}
 {% if rmt[net] is defined %}
   {{net}} = "{{rmt[net]}}"
 {%else%}
@@ -26,7 +28,7 @@ locals {
 {%endif%}
 {% endfor %}
 }
-{% for net in allsubnets|default([])%}
+{% for net in allsubnets|default([])|sort %}
 data "aws_subnet" "{{net}}" {
   count = "${length(split(",", local.{{net}}))}"
   id = "${element(split(",", local.{{net}}), count.index)}"

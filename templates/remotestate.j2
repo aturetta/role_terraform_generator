@@ -8,7 +8,7 @@ terraform {
       profile = "{{profile}}"
 {% endif %}
 {% if credentials is defined %}
-      shared_credentials_file = "credentials"
+        shared_credentials_file = "{{credentials}}"
 {% endif %}
     }
 }
